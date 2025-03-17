@@ -284,8 +284,8 @@ function FamilyTree() {
               </p>
             </ResultCard>
           ))}
-          {searchResults.length === 0 &&
-            (searchFirstName || searchLastName) && <p>Результаты не найдены</p>}
+          {/* {searchResults.length === 0 &&
+            (searchFirstName || searchLastName) && <p>Результаты не найдены</p>} */}
         </SearchResults>
       </SearchContainer>
       <TreeContainer ref={containerRef}>
