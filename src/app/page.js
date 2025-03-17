@@ -38,6 +38,30 @@ const Arrows = styled.svg`
   z-index: 0;
 `;
 
+const SearchContainer = styled.div`
+  margin: 20px;
+  width: 100%;
+  max-width: 600px;
+`;
+
+const SearchInput = styled.input`
+  padding: 8px;
+  margin: 5px;
+  width: 200px;
+`;
+
+const SearchResults = styled.div`
+  margin-top: 20px;
+`;
+
+const ResultCard = styled.div`
+  padding: 10px;
+  margin: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+`;
+
 const initialPerson = {
   id: "1",
   firstName: "",
@@ -55,6 +79,9 @@ function FamilyTree() {
   const [connections, setConnections] = useState([]);
   const containerRef = useRef(null);
   const cardRefs = useRef({});
+  const [searchFirstName, setSearchFirstName] = useState("");
+  const [searchLastName, setSearchLastName] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
 
   useEffect(() => {
     const savedFamilyMembers = localStorage.getItem("familyMembers");
@@ -85,7 +112,7 @@ function FamilyTree() {
       member.parents.forEach((parentId) => {
         const parentElement = cardRefs.current[parentId];
         const childElement = cardRefs.current[member.id];
-        
+
         if (parentElement && childElement) {
           const parentRect = parentElement.getBoundingClientRect();
           const childRect = childElement.getBoundingClientRect();
@@ -119,7 +146,8 @@ function FamilyTree() {
       dateOfBirth: "",
       parents: type === "child" ? [relativeId] : [],
       children: type === "parent" ? [relativeId] : [],
-      generation: type === "child" ? parent.generation - 1 : parent.generation + 1,
+      generation:
+        type === "child" ? parent.generation - 1 : parent.generation + 1,
     };
 
     setFamilyMembers((prev) => {
@@ -147,6 +175,28 @@ function FamilyTree() {
     setFamilyMembers((prev) =>
       prev.map((m) => (m.id === id ? { ...m, [field]: value } : m))
     );
+  };
+
+  const handleSearch = () => {
+    const results = familyMembers.filter((member) => {
+      const firstNameMatch = member.firstName
+        .toLowerCase()
+        .includes(searchFirstName.toLowerCase());
+      const lastNameMatch = member.lastName
+        .toLowerCase()
+        .includes(searchLastName.toLowerCase());
+
+      if (searchFirstName && searchLastName) {
+        return firstNameMatch && lastNameMatch;
+      } else if (searchFirstName) {
+        return firstNameMatch;
+      } else if (searchLastName) {
+        return lastNameMatch;
+      }
+      return false;
+    });
+
+    setSearchResults(results);
   };
 
   const renderTree = (generation) => {
@@ -204,26 +254,61 @@ function FamilyTree() {
   };
 
   return (
-    <TreeContainer ref={containerRef}>
-      <Arrows>
-        {connections.map((connection, index) => (
-          <path
-            key={index}
-            d={`M ${connection.x1} ${connection.y1} C ${connection.x1} ${
-              (connection.y1 + connection.y2) / 2
-            }, ${connection.x2} ${(connection.y1 + connection.y2) / 2}, ${
-              connection.x2
-            } ${connection.y2}`}
-            stroke="#666"
-            strokeWidth="2"
-            fill="none"
-          />
-        ))}
-      </Arrows>
-      {[...new Set(familyMembers.map((m) => m.generation))]
-        .sort((a, b) => b - a)
-        .map((gen) => renderTree(gen))}
-    </TreeContainer>
+    <>
+      <SearchContainer>
+        <SearchInput
+          placeholder="Имя"
+          value={searchFirstName}
+          onChange={(e) => setSearchFirstName(e.target.value)}
+        />
+        <SearchInput
+          placeholder="Фамилия"
+          value={searchLastName}
+          onChange={(e) => setSearchLastName(e.target.value)}
+        />
+        <button onClick={handleSearch}>Поиск</button>
+
+        <SearchResults>
+          {searchResults.map((person) => (
+            <ResultCard key={person.id}>
+              <p>
+                <strong>Имя:</strong> {person.firstName} {person.lastName}
+              </p>
+              <p>
+                <strong>Пол:</strong>{" "}
+                {person.gender === "M" ? "М" : "Ж"}
+              </p>
+              <p>
+                <strong>Дата рождения:</strong>{" "}
+                {person.dateOfBirth || "Не указано"}
+              </p>
+            </ResultCard>
+          ))}
+          {searchResults.length === 0 &&
+            (searchFirstName || searchLastName) && <p>Результаты не найдены</p>}
+        </SearchResults>
+      </SearchContainer>
+      <TreeContainer ref={containerRef}>
+        <Arrows>
+          {connections.map((connection, index) => (
+            <path
+              key={index}
+              d={`M ${connection.x1} ${connection.y1} C ${connection.x1} ${
+                (connection.y1 + connection.y2) / 2
+              }, ${connection.x2} ${(connection.y1 + connection.y2) / 2}, ${
+                connection.x2
+              } ${connection.y2}`}
+              stroke="#666"
+              strokeWidth="2"
+              fill="none"
+            />
+          ))}
+        </Arrows>
+        {[...new Set(familyMembers.map((m) => m.generation))]
+          .sort((a, b) => b - a)
+          .map((gen) => renderTree(gen))}
+      </TreeContainer>
+    </>
   );
 }
 
